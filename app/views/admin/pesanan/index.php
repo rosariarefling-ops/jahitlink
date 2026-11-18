@@ -57,7 +57,17 @@
                                     </td>
                                     <td><span class="badge badge-info"><?= htmlspecialchars($ps['status_pesanan']) ?></span></td>
                                     <td>
-                                        <a href="<?= base_url('admin/pesanan/detail?id=' . (int) $ps['id_pesanan']) ?>" class="btn btn-primary btn-sm">Detail &amp; Kelola</a>
+                                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                                            <a href="<?= base_url('admin/pesanan/detail?id=' . (int) $ps['id_pesanan']) ?>" class="btn btn-primary btn-sm">Detail &amp; Kelola</a>
+
+                                            <?php if ($ps['status_pesanan'] === 'Menunggu Konfirmasi' && $bayar <= 0): ?>
+                                                <form method="POST" action="<?= base_url('admin/pesanan/hapus') ?>" style="margin: 0;"
+                                                      onsubmit="return confirm('Yakin ingin menghapus pesanan <?= htmlspecialchars($ps['kode_pesanan']) ?>? Data yang dihapus tidak dapat dikembalikan.');">
+                                                    <input type="hidden" name="id_pesanan" value="<?= (int) $ps['id_pesanan'] ?>">
+                                                    <button type="submit" class="btn btn-sm" style="background-color: #dc3545; color: #fff; border: none; cursor: pointer;">Hapus</button>
+                                                </form>
+                                            <?php endif; ?>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

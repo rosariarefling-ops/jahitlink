@@ -197,5 +197,11 @@ class Pesanan {
             WHERE id_pesanan = ? AND id_penjahit = ?
         ");
         return $stmt->execute([$status_pesanan, $id_pesanan, $id_penjahit]);
+    
+    }
+
+    public function deleteById($id_pesanan) {
+        $stmt = $this->pdo->prepare("DELETE FROM pesanan WHERE id_pesanan = :id");
+        return $stmt->execute([':id' => $id_pesanan]);
     }
 }

@@ -87,4 +87,39 @@ class PesananController {
         }
         redirect('admin/pesanan');
     }
+
+    public function hapus() {
+        wajib_login('admin');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirect('admin/pesanan');
+        }
+
+        $id_pesanan   = (int) ($_POST['id_pesanan'] ?? 0);
+        $pesananModel = new Pesanan($this->pdo);
+        $pesanan      = $pesananModel->findById($id_pesanan);
+
+        if (!$pesanan) {
+            set_flash('danger', 'Data pesanan tidak ditemukan.');
+            redirect('admin/pesanan');
+        }
+
+        // Pastikan pesanan belum memiliki riwayat pembayaran
+        $stmtBayar = $this->pdo->prepare("SELECT COUNT(*) FROM pembayaran WHERE id_pesanan = :id");
+        $stmtBayar->execute([':id' => $id_pesanan]);
+        if ((int) $stmtBayar->fetchColumn() > 0) {
+            set_flash('danger', 'Pesanan tidak dapat dihapus karena sudah memiliki riwayat pembayaran.');
+            redirect('admin/pesanan');
+        }
+
+        // Pastikan status pesanan masih Menunggu Konfirmasi
+        if ($pesanan['status_pesanan'] !== 'Menunggu Konfirmasi') {
+            set_flash('danger', 'Hanya pesanan berstatus Menunggu Konfirmasi yang dapat dihapus.');
+            redirect('admin/pesanan');
+        }
+
+        $pesananModel->deleteById($id_pesanan);
+        set_flash('success', 'Pesanan ' . $pesanan['kode_pesanan'] . ' berhasil dihapus.');
+        redirect('admin/pesanan');
+    }
 }

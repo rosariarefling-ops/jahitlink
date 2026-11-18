@@ -70,6 +70,9 @@ switch ($url) {
     case 'admin/pesanan/update':
         (new PesananController($pdo))->update();
         break;
+    case 'admin/pesanan/hapus':
+        (new PesananController($pdo))->hapus();
+        break;
     case 'admin/pembayaran':
         (new PembayaranController($pdo))->index();
         break;
