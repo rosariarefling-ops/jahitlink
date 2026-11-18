@@ -104,22 +104,26 @@ class PesananController {
             redirect('admin/pesanan');
         }
 
-        // Pastikan pesanan belum memiliki riwayat pembayaran
-        $stmtBayar = $this->pdo->prepare("SELECT COUNT(*) FROM pembayaran WHERE id_pesanan = :id");
-        $stmtBayar->execute([':id' => $id_pesanan]);
-        if ((int) $stmtBayar->fetchColumn() > 0) {
-            set_flash('danger', 'Pesanan tidak dapat dihapus karena sudah memiliki riwayat pembayaran.');
-            redirect('admin/pesanan');
-        }
-
-        // Pastikan status pesanan masih Menunggu Konfirmasi
         if ($pesanan['status_pesanan'] !== 'Menunggu Konfirmasi') {
             set_flash('danger', 'Hanya pesanan berstatus Menunggu Konfirmasi yang dapat dihapus.');
             redirect('admin/pesanan');
         }
 
-        $pesananModel->deleteById($id_pesanan);
-        set_flash('success', 'Pesanan ' . $pesanan['kode_pesanan'] . ' berhasil dihapus.');
+        try {
+            $this->pdo->beginTransaction();
+
+            $stmtBayar = $this->pdo->prepare("DELETE FROM pembayaran WHERE id_pesanan = :id");
+            $stmtBayar->execute([':id' => $id_pesanan]);
+
+            $pesananModel->deleteById($id_pesanan);
+
+            $this->pdo->commit();
+            set_flash('success', 'Pesanan ' . $pesanan['kode_pesanan'] . ' berhasil dihapus.');
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            set_flash('danger', 'Gagal menghapus pesanan: ' . $e->getMessage());
+        }
+
         redirect('admin/pesanan');
     }
 }

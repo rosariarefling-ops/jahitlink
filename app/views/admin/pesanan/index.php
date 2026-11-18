@@ -60,7 +60,7 @@
                                         <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                                             <a href="<?= base_url('admin/pesanan/detail?id=' . (int) $ps['id_pesanan']) ?>" class="btn btn-primary btn-sm">Detail &amp; Kelola</a>
 
-                                            <?php if ($ps['status_pesanan'] === 'Menunggu Konfirmasi' && $bayar <= 0): ?>
+                                            <?php if ($ps['status_pesanan'] === 'Menunggu Konfirmasi'): ?>
                                                 <form method="POST" action="<?= base_url('admin/pesanan/hapus') ?>" style="margin: 0;"
                                                       onsubmit="return confirm('Yakin ingin menghapus pesanan <?= htmlspecialchars($ps['kode_pesanan']) ?>? Data yang dihapus tidak dapat dikembalikan.');">
                                                     <input type="hidden" name="id_pesanan" value="<?= (int) $ps['id_pesanan'] ?>">
