@@ -35,4 +35,15 @@ class Pelanggan {
         ");
         return $stmt->fetchAll();
     }
+
+    public function findById($id_pelanggan) {
+        $stmt = $this->pdo->prepare("SELECT * FROM pelanggan WHERE id_pelanggan = :id");
+        $stmt->execute([':id' => $id_pelanggan]);
+        return $stmt->fetch();
+    }
+
+    public function deleteById($id_pelanggan) {
+        $stmt = $this->pdo->prepare("DELETE FROM pelanggan WHERE id_pelanggan = :id");
+        return $stmt->execute([':id' => $id_pelanggan]);
+    }
 }

@@ -173,7 +173,37 @@ class PelangganController {
 
         view('admin/pelanggan/index', [
             'judul_halaman'    => 'Data Pelanggan',
-            'daftar_pelanggan' => $pelangganModel->getAllWithTotalPesanan()
+            'daftar_pelanggan' => $pelangganModel->getAllWithTotalPesanan(),
+            'flash'            => get_flash()
         ]);
+    }
+
+    public function hapus() {
+        wajib_login('admin');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            redirect('admin/pelanggan');
+        }
+
+        $id_pelanggan   = (int) ($_POST['id_pelanggan'] ?? 0);
+        $pelangganModel = new Pelanggan($this->pdo);
+        $pelanggan      = $pelangganModel->findById($id_pelanggan);
+
+        if (!$pelanggan) {
+            set_flash('danger', 'Data pelanggan tidak ditemukan.');
+            redirect('admin/pelanggan');
+        }
+
+        // Pastikan pelanggan tidak memiliki riwayat pesanan (ON DELETE RESTRICT)
+        $stmtCek = $this->pdo->prepare("SELECT COUNT(*) FROM pesanan WHERE id_pelanggan = :id");
+        $stmtCek->execute([':id' => $id_pelanggan]);
+        if ((int) $stmtCek->fetchColumn() > 0) {
+            set_flash('danger', 'Pelanggan tidak dapat dihapus karena masih memiliki riwayat pesanan.');
+            redirect('admin/pelanggan');
+        }
+
+        $pelangganModel->deleteById($id_pelanggan);
+        set_flash('success', 'Data pelanggan ' . $pelanggan['nama_pelanggan'] . ' berhasil dihapus.');
+        redirect('admin/pelanggan');
     }
 }

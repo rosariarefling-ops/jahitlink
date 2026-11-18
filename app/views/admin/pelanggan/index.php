@@ -10,6 +10,11 @@
             <p style="color: var(--text-muted); margin: 0;">Daftar pelanggan yang pernah melakukan pemesanan jasa jahit.</p>
         </div>
 
+        <!-- 1. Tambahkan Kotak Notifikasi Flash di Sini -->
+        <?php if (!empty($flash)): ?>
+            <div class="alert alert-<?= htmlspecialchars($flash['tipe']) ?>"><?= htmlspecialchars($flash['pesan']) ?></div>
+        <?php endif; ?>
+
         <div class="card">
             <?php if (count($daftar_pelanggan) > 0): ?>
                 <div class="table-responsive">
@@ -21,6 +26,7 @@
                                 <th>Nomor HP / WA</th>
                                 <th>Alamat</th>
                                 <th>Total Pesanan</th>
+                                <th>Aksi</th> <!-- 2. Tambahkan th Aksi di Sini -->
                             </tr>
                         </thead>
                         <tbody>
@@ -31,6 +37,18 @@
                                     <td><?= htmlspecialchars($pl['no_hp']) ?></td>
                                     <td><?= htmlspecialchars($pl['alamat'] ?: '-') ?></td>
                                     <td><span class="badge badge-info"><?= (int) $pl['total_pesanan'] ?> Pesanan</span></td>
+                                    
+                                    <!-- 3. Tambahkan td Aksi / Tombol Hapus di Sini -->
+                                    <td>
+                                        <?php if ((int) $pl['total_pesanan'] === 0): ?>
+                                            <form method="POST" action="<?= base_url('admin/pelanggan/hapus') ?>" style="display:inline;" onsubmit="return confirm('Yakin ingin menghapus data pelanggan ini?');">
+                                                <input type="hidden" name="id_pelanggan" value="<?= (int) $pl['id_pelanggan'] ?>">
+                                                <button type="submit" class="btn btn-sm" style="background-color: #dc3545; color: white;">Hapus</button>
+                                            </form>
+                                        <?php else: ?>
+                                            <small style="color: var(--text-muted);">Terkunci</small>
+                                        <?php endif; ?>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>

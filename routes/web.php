@@ -61,6 +61,9 @@ switch ($url) {
     case 'admin/pelanggan':
         (new PelangganController($pdo))->indexAdmin();
         break;
+    case 'admin/pelanggan/hapus':
+    (new PelangganController($pdo))->hapus();
+        break;
     case 'admin/pesanan':
         (new PesananController($pdo))->index();
         break;
