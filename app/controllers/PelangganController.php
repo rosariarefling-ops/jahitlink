@@ -18,12 +18,13 @@ class PelangganController {
         $error = '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $nama_pelanggan = trim($_POST['nama_pelanggan'] ?? '');
-            $no_hp          = trim($_POST['no_hp'] ?? '');
+            $nama_pelanggan = trim(preg_replace('/\s+/', ' ', $_POST['nama_pelanggan'] ?? ''));
+            $no_hp_raw      = trim($_POST['no_hp'] ?? '');
+            $no_hp          = preg_replace('/[\s\-]/', '', $no_hp_raw);
             $alamat         = trim($_POST['alamat'] ?? '');
             $id_jasa        = (int) ($_POST['id_jasa'] ?? 0);
             $jumlah         = (int) ($_POST['jumlah'] ?? 1);
-            $model_pakaian  = trim($_POST['model_pakaian'] ?? '');
+            $model_pakaian  = trim(preg_replace('/\s+/', ' ', $_POST['model_pakaian'] ?? ''));
             $rencana_bayar  = trim($_POST['rencana_bayar'] ?? 'DP 50% - Transfer Bank');
             $catatan_input  = trim($_POST['catatan_ukuran'] ?? '');
             $catatan_ukuran = ($catatan_input !== '' ? $catatan_input . ' | ' : '') . 'Preferensi Bayar: ' . $rencana_bayar;
@@ -36,7 +37,7 @@ class PelangganController {
                 $val = trim($_POST[$key] ?? '');
                 if ($val === '') {
                     $ukuran[$key] = null;
-                } elseif (!is_numeric($val) || (float) $val < 0) {
+                } elseif (!is_numeric($val) || (float) $val < 10 || (float) $val > 250) {
                     $ukuran_valid = false;
                 } else {
                     $ukuran[$key] = (float) $val;
@@ -45,12 +46,25 @@ class PelangganController {
 
             $jasa = $jasaModel->findById($id_jasa);
 
+            // Validasi ketat setiap input pengguna
             if ($nama_pelanggan === '' || $no_hp === '' || !$jasa || $model_pakaian === '') {
                 $error = 'Nama lengkap, nomor HP, jenis layanan, dan model pakaian wajib diisi.';
-            } elseif ($jumlah < 1) {
-                $error = 'Jumlah pakaian minimal 1 pcs.';
+            } elseif (
+                mb_strlen($nama_pelanggan) < 3 ||
+                !preg_match("/^[a-zA-Z\s.,'-]+$/", $nama_pelanggan) ||
+                !preg_match("/[a-zA-Z]/", $nama_pelanggan)
+            ) {
+                $error = 'Nama lengkap hanya boleh berisi huruf, spasi, titik (.), atau koma (,), minimal 3 karakter.';
+            } elseif (!preg_match('/^(\+62|62|0)8[1-9][0-9]{7,11}$/', $no_hp)) {
+                $error = 'Format Nomor HP tidak valid. Gunakan nomor seluler Indonesia yang aktif (contoh: 081234567890).';
+            } elseif ($alamat !== '' && (mb_strlen($alamat) < 5 || !preg_match('/[a-zA-Z]/', $alamat))) {
+                $error = 'Alamat harus diisi dengan jelas (minimal 5 karakter dan mengandung nama jalan/wilayah).';
+            } elseif ($jumlah < 1 || $jumlah > 100) {
+                $error = 'Jumlah pakaian harus antara 1 hingga 100 pcs.';
+            } elseif (mb_strlen($model_pakaian) < 3 || !preg_match('/[a-zA-Z]/', $model_pakaian)) {
+                $error = 'Model pakaian wajib berisi keterangan huruf yang jelas (contoh: Kebaya Modern).';
             } elseif (!$ukuran_valid) {
-                $error = 'Nilai ukuran badan harus berupa angka positif (satuan cm).';
+                $error = 'Nilai ukuran badan tidak logis. Masukkan angka antara 10 cm hingga 250 cm.';
             } else {
                 try {
                     $this->pdo->beginTransaction();
@@ -118,8 +132,8 @@ class PelangganController {
     }
 
     public function cekStatus() {
-        $kode  = trim($_POST['kode_pesanan'] ?? ($_GET['kode'] ?? ''));
-        $no_hp = trim($_POST['no_hp'] ?? ($_GET['hp'] ?? ''));
+        $kode  = strtoupper(trim($_POST['kode_pesanan'] ?? ($_GET['kode'] ?? '')));
+        $no_hp = preg_replace('/[\s\-]/', '', trim($_POST['no_hp'] ?? ($_GET['hp'] ?? '')));
         $pesanan = null;
         $riwayat_bayar = [];
         $error = '';
@@ -127,6 +141,10 @@ class PelangganController {
         if ($kode !== '' || $no_hp !== '') {
             if ($kode === '' || $no_hp === '') {
                 $error = 'Masukkan Kode Pesanan dan Nomor HP secara lengkap.';
+            } elseif (!preg_match('/^JHL-\d{8}-\d{3,}$/', $kode)) {
+                $error = 'Format Kode Pesanan tidak sesuai (contoh format benar: JHL-20261118-001).';
+            } elseif (!preg_match('/^(\+62|62|0)8[1-9][0-9]{7,11}$/', $no_hp)) {
+                $error = 'Format Nomor HP tidak valid. Masukkan 10–14 digit nomor HP terdaftar.';
             } else {
                 $pesananModel    = new Pesanan($this->pdo);
                 $pembayaranModel = new Pembayaran($this->pdo);
