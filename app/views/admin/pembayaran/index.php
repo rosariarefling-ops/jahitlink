@@ -34,7 +34,7 @@
 
                         <div class="form-group">
                             <label for="jumlah_bayar">Nominal Pembayaran (Rp) *</label>
-                            <input type="number" id="jumlah_bayar" name="jumlah_bayar" class="form-control" min="1" step="1000" placeholder="Contoh: 150000" required>
+                            <input type="number" id="jumlah_bayar" name="jumlah_bayar" class="form-control" min="1" step="1" placeholder="Contoh: 150000" required>
                         </div>
                     </div>
 
