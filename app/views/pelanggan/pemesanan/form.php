@@ -1,180 +1,139 @@
-<?php
-require_once __DIR__ . '/../models/JasaJahit.php';
-require_once __DIR__ . '/../models/Pelanggan.php';
-require_once __DIR__ . '/../models/Pesanan.php';
-require_once __DIR__ . '/../models/Pembayaran.php';
+<?php require __DIR__ . '/../../layouts/header.php'; ?>
+<?php require __DIR__ . '/../../layouts/navbar.php'; ?>
 
-class PelangganController {
-    private $pdo;
+<main>
+    <section class="section">
+        <div class="container" style="max-width: 820px;">
+            <div class="section-header" style="text-align: left; margin-bottom: 24px;">
+                <h2>Formulir Pemesanan Jasa Jahit</h2>
+                <p>Lengkapi data diri, jenis layanan, ukuran badan, serta pilihan metode pembayaran Anda tanpa perlu login.</p>
+            </div>
 
-    public function __construct($pdo) {
-        $this->pdo = $pdo;
-    }
+            <?php if ($error !== ''): ?>
+                <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+            <?php endif; ?>
 
-    public function formPesan() {
-        $jasaModel   = new JasaJahit($this->pdo);
-        $daftar_jasa = $jasaModel->getAll();
-        $id_jasa_terpilih = (int) ($_POST['id_jasa'] ?? ($_GET['id_jasa'] ?? 0));
-        $error = '';
+            <form method="POST" action="<?= base_url('pesan') ?>">
+                <div class="card" style="margin-bottom: 20px;">
+                    <h3 style="font-size: 1.05rem; margin-bottom: 16px; color: var(--pastel-sage);">1. Data Pemesan</h3>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label for="nama_pelanggan">Nama Lengkap *</label>
+                            <input type="text" id="nama_pelanggan" name="nama_pelanggan" class="form-control"
+                                   minlength="3" maxlength="100"
+                                   pattern="^[A-Za-z\s.,'\-]+$"
+                                   title="Hanya boleh diisi huruf, spasi, titik (.), atau koma (,)"
+                                   oninput="this.value = this.value.replace(/[^A-Za-z\s.,'\-]/g, '')"
+                                   value="<?= htmlspecialchars($_POST['nama_pelanggan'] ?? '') ?>"
+                                   placeholder="Contoh: Hj. Rahmawati, S.Pd." required>
+                        </div>
+                        <div class="form-group">
+                            <label for="no_hp">Nomor HP / WhatsApp *</label>
+                            <input type="tel" id="no_hp" name="no_hp" class="form-control"
+                                   minlength="10" maxlength="15"
+                                   pattern="^(\+62|62|0)8[1-9][0-9]{7,11}$"
+                                   title="Masukkan nomor HP Indonesia yang valid (10-14 digit, diawali 08 atau +62)"
+                                   oninput="this.value = this.value.replace(/[^0-9+]/g, '')"
+                                   value="<?= htmlspecialchars($_POST['no_hp'] ?? '') ?>"
+                                   placeholder="Contoh: 081234567890" required>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="alamat">Alamat Lengkap</label>
+                        <textarea id="alamat" name="alamat" rows="2" class="form-control" maxlength="255"
+                                  placeholder="Contoh: Jl. Towua No. 24"><?= htmlspecialchars($_POST['alamat'] ?? '') ?></textarea>
+                    </div>
+                </div>
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $nama_pelanggan = trim(preg_replace('/\s+/', ' ', $_POST['nama_pelanggan'] ?? ''));
-            $no_hp_raw      = trim($_POST['no_hp'] ?? '');
-            $no_hp          = preg_replace('/[\s\-]/', '', $no_hp_raw);
-            $alamat         = trim($_POST['alamat'] ?? '');
-            $id_jasa        = (int) ($_POST['id_jasa'] ?? 0);
-            $jumlah         = (int) ($_POST['jumlah'] ?? 1);
-            $model_pakaian  = trim(preg_replace('/\s+/', ' ', $_POST['model_pakaian'] ?? ''));
-            $rencana_bayar  = trim($_POST['rencana_bayar'] ?? 'DP 50% - Transfer Bank');
-            $catatan_input  = trim($_POST['catatan_ukuran'] ?? '');
-            $catatan_ukuran = ($catatan_input !== '' ? $catatan_input . ' | ' : '') . 'Preferensi Bayar: ' . $rencana_bayar;
+                <div class="card" style="margin-bottom: 20px;">
+                    <h3 style="font-size: 1.05rem; margin-bottom: 16px; color: var(--pastel-sage);">2. Detail Layanan &amp; Pilihan Pembayaran</h3>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label for="id_jasa">Pilih Layanan Jahit *</label>
+                            <select id="id_jasa" name="id_jasa" class="form-control" required>
+                                <option value="">-- Pilih Jenis Layanan --</option>
+                                <?php foreach ($daftar_jasa as $jasa): ?>
+                                    <option value="<?= (int) $jasa['id_jasa'] ?>" <?= $id_jasa_terpilih === (int) $jasa['id_jasa'] ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($jasa['nama_jasa']) ?> (<?= format_rupiah($jasa['harga']) ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="jumlah">Jumlah Pakaian (pcs) *</label>
+                            <input type="number" id="jumlah" name="jumlah" class="form-control" min="1" max="100"
+                                   value="<?= htmlspecialchars($_POST['jumlah'] ?? '1') ?>" required>
+                        </div>
+                    </div>
+                    <div class="grid-2" style="margin-bottom: 0;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="model_pakaian">Model Pakaian &amp; Keterangan Kain *</label>
+                            <input type="text" id="model_pakaian" name="model_pakaian" class="form-control"
+                                   minlength="3" maxlength="150"
+                                   pattern=".*[A-Za-z]+.*"
+                                   title="Wajib mengandung keterangan huruf yang jelas"
+                                   value="<?= htmlspecialchars($_POST['model_pakaian'] ?? '') ?>"
+                                   placeholder="Contoh: Kebaya Modern (Bawa kain sendiri)" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="rencana_bayar">Pilihan Skema &amp; Metode Pembayaran *</label>
+                            <select id="rencana_bayar" name="rencana_bayar" class="form-control" required>
+                                <?php $selected_bayar = $_POST['rencana_bayar'] ?? 'DP 50% - Transfer Bank'; ?>
+                                <option value="DP 50% - Transfer Bank" <?= $selected_bayar === 'DP 50% - Transfer Bank' ? 'selected' : '' ?>>DP 50% via Transfer Bank</option>
+                                <option value="DP 50% - Tunai di Toko" <?= $selected_bayar === 'DP 50% - Tunai di Toko' ? 'selected' : '' ?>>DP 50% Tunai saat Antar Kain</option>
+                                <option value="Lunas di Awal - Transfer Bank" <?= $selected_bayar === 'Lunas di Awal - Transfer Bank' ? 'selected' : '' ?>>Lunas 100% via Transfer Bank</option>
+                                <option value="Lunas di Awal - Tunai di Toko" <?= $selected_bayar === 'Lunas di Awal - Tunai di Toko' ? 'selected' : '' ?>>Lunas 100% Tunai di Toko</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
 
-            $ukuran_keys = ['lingkar_kepala', 'lingkar_dada', 'lingkar_paha', 'lingkar_pinggang', 'lebar_bahu'];
-            $ukuran = [];
-            $ukuran_valid = true;
+                <div class="card" style="margin-bottom: 24px;">
+                    <h3 style="font-size: 1.05rem; margin-bottom: 6px; color: var(--pastel-sage);">3. Ukuran Badan &amp; Pakaian (Satuan cm)</h3>
+                    <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 16px;">
+                        Kosongkan bagian ukuran yang tidak diperlukan (rentang valid: 10 – 250 cm).
+                    </p>
+                    <div class="grid-3">
+                        <div class="form-group">
+                            <label for="lingkar_kepala">Lingkar Kepala (cm)</label>
+                            <input type="number" step="0.01" min="10" max="250" id="lingkar_kepala" name="lingkar_kepala" class="form-control"
+                                   value="<?= htmlspecialchars($_POST['lingkar_kepala'] ?? '') ?>" placeholder="Contoh: 55">
+                        </div>
+                        <div class="form-group">
+                            <label for="lingkar_dada">Lingkar Dada (cm)</label>
+                            <input type="number" step="0.01" min="10" max="250" id="lingkar_dada" name="lingkar_dada" class="form-control"
+                                   value="<?= htmlspecialchars($_POST['lingkar_dada'] ?? '') ?>" placeholder="Contoh: 92">
+                        </div>
+                        <div class="form-group">
+                            <label for="lingkar_paha">Lingkar Paha (cm)</label>
+                            <input type="number" step="0.01" min="10" max="250" id="lingkar_paha" name="lingkar_paha" class="form-control"
+                                   value="<?= htmlspecialchars($_POST['lingkar_paha'] ?? '') ?>" placeholder="Contoh: 56">
+                        </div>
+                        <div class="form-group">
+                            <label for="lingkar_pinggang">Lingkar Pinggang (cm)</label>
+                            <input type="number" step="0.01" min="10" max="250" id="lingkar_pinggang" name="lingkar_pinggang" class="form-control"
+                                   value="<?= htmlspecialchars($_POST['lingkar_pinggang'] ?? '') ?>" placeholder="Contoh: 74">
+                        </div>
+                        <div class="form-group">
+                            <label for="lebar_bahu">Lebar Bahu (cm)</label>
+                            <input type="number" step="0.01" min="10" max="250" id="lebar_bahu" name="lebar_bahu" class="form-control"
+                                   value="<?= htmlspecialchars($_POST['lebar_bahu'] ?? '') ?>" placeholder="Contoh: 38">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="catatan_ukuran">Catatan Ukuran &amp; Detail Tambahan</label>
+                        <textarea id="catatan_ukuran" name="catatan_ukuran" rows="2" class="form-control" maxlength="500"
+                                  placeholder="Contoh: Panjang baju 75 cm, panjang lengan 55 cm..."><?= htmlspecialchars($_POST['catatan_ukuran'] ?? '') ?></textarea>
+                    </div>
+                </div>
 
-            foreach ($ukuran_keys as $key) {
-                $val = trim($_POST[$key] ?? '');
-                if ($val === '') {
-                    $ukuran[$key] = null;
-                } elseif (!is_numeric($val) || (float) $val < 10 || (float) $val > 250) {
-                    $ukuran_valid = false;
-                } else {
-                    $ukuran[$key] = (float) $val;
-                }
-            }
+                <div style="display: flex; gap: 12px;">
+                    <button type="submit" class="btn btn-primary">Kirim Pesanan Jahit</button>
+                    <a href="<?= base_url('') ?>" class="btn btn-secondary">Kembali ke Beranda</a>
+                </div>
+            </form>
+        </div>
+    </section>
+</main>
 
-            $jasa = $jasaModel->findById($id_jasa);
-
-            // Validasi ketat setiap input pengguna
-            if ($nama_pelanggan === '' || $no_hp === '' || !$jasa || $model_pakaian === '') {
-                $error = 'Nama lengkap, nomor HP, jenis layanan, dan model pakaian wajib diisi.';
-            } elseif (
-                mb_strlen($nama_pelanggan) < 3 ||
-                !preg_match("/^[a-zA-Z\s.,'-]+$/", $nama_pelanggan) ||
-                !preg_match("/[a-zA-Z]/", $nama_pelanggan)
-            ) {
-                $error = 'Nama lengkap hanya boleh berisi huruf, spasi, titik (.), atau koma (,), minimal 3 karakter.';
-            } elseif (!preg_match('/^(\+62|62|0)8[1-9][0-9]{7,11}$/', $no_hp)) {
-                $error = 'Format Nomor HP tidak valid. Gunakan nomor seluler Indonesia yang aktif (contoh: 081234567890).';
-            } elseif ($alamat !== '' && (mb_strlen($alamat) < 5 || !preg_match('/[a-zA-Z]/', $alamat))) {
-                $error = 'Alamat harus diisi dengan jelas (minimal 5 karakter dan mengandung nama jalan/wilayah).';
-            } elseif ($jumlah < 1 || $jumlah > 100) {
-                $error = 'Jumlah pakaian harus antara 1 hingga 100 pcs.';
-            } elseif (mb_strlen($model_pakaian) < 3 || !preg_match('/[a-zA-Z]/', $model_pakaian)) {
-                $error = 'Model pakaian wajib berisi keterangan huruf yang jelas (contoh: Kebaya Modern).';
-            } elseif (!$ukuran_valid) {
-                $error = 'Nilai ukuran badan tidak logis. Masukkan angka antara 10 cm hingga 250 cm.';
-            } else {
-                try {
-                    $this->pdo->beginTransaction();
-
-                    $pelangganModel = new Pelanggan($this->pdo);
-                    $pesananModel   = new Pesanan($this->pdo);
-
-                    $id_pelanggan = $pelangganModel->findOrCreate($nama_pelanggan, $no_hp, $alamat);
-                    $kode_pesanan = $pesananModel->generateKodePesanan();
-                    $harga_satuan = (float) $jasa['harga'];
-                    $total_harga  = $harga_satuan * $jumlah;
-
-                    $pesananModel->create([
-                        'kode_pesanan'     => $kode_pesanan,
-                        'id_pelanggan'     => $id_pelanggan,
-                        'id_jasa'          => $id_jasa,
-                        'jumlah'           => $jumlah,
-                        'harga_satuan'     => $harga_satuan,
-                        'total_harga'      => $total_harga,
-                        'model_pakaian'    => $model_pakaian,
-                        'lingkar_kepala'   => $ukuran['lingkar_kepala'],
-                        'lingkar_dada'     => $ukuran['lingkar_dada'],
-                        'lingkar_paha'     => $ukuran['lingkar_paha'],
-                        'lingkar_pinggang' => $ukuran['lingkar_pinggang'],
-                        'lebar_bahu'       => $ukuran['lebar_bahu'],
-                        'catatan_ukuran'   => $catatan_ukuran
-                    ]);
-
-                    $this->pdo->commit();
-                    redirect('pesan/sukses?kode=' . urlencode($kode_pesanan) . '&hp=' . urlencode($no_hp));
-                } catch (Exception $e) {
-                    $this->pdo->rollBack();
-                    $error = 'Gagal menyimpan pesanan: ' . $e->getMessage();
-                }
-            }
-        }
-
-        view('pelanggan/pemesanan/form', [
-            'judul_halaman'    => 'Form Pemesanan Jahit',
-            'daftar_jasa'      => $daftar_jasa,
-            'id_jasa_terpilih' => $id_jasa_terpilih,
-            'error'            => $error
-        ]);
-    }
-
-    public function sukses() {
-        $kode  = trim($_GET['kode'] ?? '');
-        $no_hp = trim($_GET['hp'] ?? '');
-
-        if ($kode === '' || $no_hp === '') {
-            redirect('pesan');
-        }
-
-        $pesananModel = new Pesanan($this->pdo);
-        $pesanan = $pesananModel->findByKodeAndHp($kode, $no_hp);
-
-        if (!$pesanan) {
-            redirect('pesan');
-        }
-
-        view('pelanggan/pemesanan/sukses', [
-            'judul_halaman' => 'Pesanan Berhasil Dibuat',
-            'pesanan'       => $pesanan
-        ]);
-    }
-
-    public function cekStatus() {
-        $kode  = strtoupper(trim($_POST['kode_pesanan'] ?? ($_GET['kode'] ?? '')));
-        $no_hp = preg_replace('/[\s\-]/', '', trim($_POST['no_hp'] ?? ($_GET['hp'] ?? '')));
-        $pesanan = null;
-        $riwayat_bayar = [];
-        $error = '';
-
-        if ($kode !== '' || $no_hp !== '') {
-            if ($kode === '' || $no_hp === '') {
-                $error = 'Masukkan Kode Pesanan dan Nomor HP secara lengkap.';
-            } elseif (!preg_match('/^JHL-\d{8}-\d{3,}$/', $kode)) {
-                $error = 'Format Kode Pesanan tidak sesuai (contoh format benar: JHL-20261118-001).';
-            } elseif (!preg_match('/^(\+62|62|0)8[1-9][0-9]{7,11}$/', $no_hp)) {
-                $error = 'Format Nomor HP tidak valid. Masukkan 10–14 digit nomor HP terdaftar.';
-            } else {
-                $pesananModel    = new Pesanan($this->pdo);
-                $pembayaranModel = new Pembayaran($this->pdo);
-
-                $pesanan = $pesananModel->findByKodeAndHp($kode, $no_hp);
-                if ($pesanan) {
-                    $riwayat_bayar = $pembayaranModel->getByPesanan($pesanan['id_pesanan']);
-                } else {
-                    $error = 'Pesanan tidak ditemukan. Pastikan Kode Pesanan dan Nomor HP sesuai.';
-                }
-            }
-        }
-
-        view('pelanggan/cek_status', [
-            'judul_halaman' => 'Cek Status Pesanan',
-            'kode'          => $kode,
-            'no_hp'         => $no_hp,
-            'pesanan'       => $pesanan,
-            'riwayat_bayar' => $riwayat_bayar,
-            'error'         => $error
-        ]);
-    }
-
-    public function indexAdmin() {
-        wajib_login('admin');
-        $pelangganModel = new Pelanggan($this->pdo);
-
-        view('admin/pelanggan/index', [
-            'judul_halaman'    => 'Data Pelanggan',
-            'daftar_pelanggan' => $pelangganModel->getAllWithTotalPesanan()
-        ]);
-    }
-}
+<?php require __DIR__ . '/../../layouts/footer.php'; ?>

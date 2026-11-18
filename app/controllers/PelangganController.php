@@ -46,7 +46,6 @@ class PelangganController {
 
             $jasa = $jasaModel->findById($id_jasa);
 
-            // Validasi ketat setiap input pengguna
             if ($nama_pelanggan === '' || $no_hp === '' || !$jasa || $model_pakaian === '') {
                 $error = 'Nama lengkap, nomor HP, jenis layanan, dan model pakaian wajib diisi.';
             } elseif (
